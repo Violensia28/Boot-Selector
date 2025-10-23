@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <WebServer.h>  // Standard WebServer (smaller than Async)
+#include <WebServer.h>
 #include <esp_ota_ops.h>
 #include <esp_partition.h>
 
@@ -12,7 +12,7 @@
 #define BOOTSEL_AP_PASS "12345678"
 #endif
 
-WebServer server(80);  // Standard WebServer instead of AsyncWebServer
+WebServer server(80);
 
 // GPIO Safety - daftar pin yang perlu diamankan
 const uint8_t SAFE_PINS[] = {4, 5, 13, 14, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33};
