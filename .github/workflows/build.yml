@@ -53,6 +53,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install platformio
         
+    - name: Clean library cache
+      run: |
+        echo "Cleaning PlatformIO library cache..."
+        rm -rf ~/.platformio/lib
+        rm -rf .pio/libdeps
+        
     - name: Build firmware
       run: pio run
       
