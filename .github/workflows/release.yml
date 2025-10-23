@@ -1,0 +1,324 @@
+name: Release BootSelector
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install PlatformIO
+      run: pip install platformio
+      
+    - name: Build Firmware
+      run: pio run -e esp32dev
+      
+    - name: Get version
+      id: version
+      run: |
+        echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        echo "DATE=$(date -u +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+        
+    - name: Package Release
+      run: |
+        mkdir -p BootSelector-${{ steps.version.outputs.VERSION }}
+        
+        # Copy binaries
+        cp .pio/build/esp32dev/firmware.bin BootSelector-${{ steps.version.outputs.VERSION }}/bootselector.bin
+        cp .pio/build/esp32dev/partitions.bin BootSelector-${{ steps.version.outputs.VERSION }}/
+        cp .pio/build/esp32dev/bootloader.bin BootSelector-${{ steps.version.outputs.VERSION }}/
+        
+        # Copy project files
+        cp partitions.csv BootSelector-${{ steps.version.outputs.VERSION }}/
+        cp platformio.ini BootSelector-${{ steps.version.outputs.VERSION }}/
+        cp README.md BootSelector-${{ steps.version.outputs.VERSION }}/
+        cp LICENSE BootSelector-${{ steps.version.outputs.VERSION }}/
+        cp -r src BootSelector-${{ steps.version.outputs.VERSION }}/
+        
+        # Generate build info
+        cat > BootSelector-${{ steps.version.outputs.VERSION }}/BUILD_INFO.txt << EOF
+        BootSelector ESP32 - Build Information
+        ======================================
+        
+        Version:     ${{ steps.version.outputs.VERSION }}
+        Build Date:  ${{ steps.version.outputs.DATE }}
+        Git Commit:  ${{ github.sha }}
+        Git Branch:  ${{ github.ref_name }}
+        
+        Firmware Size:
+        $(ls -lh .pio/build/esp32dev/firmware.bin)
+        
+        Partition Layout:
+        $(cat partitions.csv)
+        
+        Flash Command:
+        esptool.py --chip esp32 --baud 921600 write_flash \\
+          0x1000 bootloader.bin \\
+          0x8000 partitions.bin \\
+          0x10000 bootselector.bin
+        EOF
+        
+        # Create flash scripts
+        cat > BootSelector-${{ steps.version.outputs.VERSION }}/flash_windows.bat << 'EOFWIN'
+        @echo off
+        cls
+        echo ================================================
+        echo  BootSelector ESP32 Flash Tool
+        echo  Version: %VERSION%
+        echo ================================================
+        echo.
+        
+        where esptool.py >nul 2>&1
+        if %ERRORLEVEL% NEQ 0 (
+            echo [ERROR] esptool.py tidak ditemukan!
+            echo.
+            echo Install dengan: pip install esptool
+            echo.
+            pause
+            exit /b 1
+        )
+        
+        echo Pilih port COM ESP32 Anda:
+        echo.
+        mode | findstr "COM"
+        echo.
+        set /p COMPORT="Masukkan port (contoh: COM3): "
+        
+        if "%COMPORT%"=="" (
+            echo [ERROR] Port tidak boleh kosong!
+            pause
+            exit /b 1
+        )
+        
+        echo.
+        echo Memulai flashing ke %COMPORT%...
+        echo.
+        
+        esptool.py --chip esp32 --port %COMPORT% --baud 921600 ^
+          --before default_reset --after hard_reset write_flash ^
+          -z --flash_mode dio --flash_freq 40m --flash_size 4MB ^
+          0x1000 bootloader.bin ^
+          0x8000 partitions.bin ^
+          0x10000 bootselector.bin
+        
+        if %ERRORLEVEL% EQU 0 (
+            echo.
+            echo ================================================
+            echo  [SUCCESS] Flash berhasil!
+            echo ================================================
+            echo.
+            echo Langkah selanjutnya:
+            echo 1. ESP32 akan membuat WiFi AP: BootSelector
+            echo 2. Password: 12345678
+            echo 3. Buka browser: http://192.168.4.1
+            echo 4. Upload firmware aplikasi Anda
+            echo.
+        ) else (
+            echo.
+            echo [ERROR] Flash gagal! Cek koneksi ESP32 Anda.
+            echo.
+        )
+        
+        pause
+        EOFWIN
+        
+        cat > BootSelector-${{ steps.version.outputs.VERSION }}/flash_linux.sh << 'EOFLNX'
+        #!/bin/bash
+        
+        VERSION="${{ steps.version.outputs.VERSION }}"
+        
+        clear
+        echo "================================================"
+        echo " BootSelector ESP32 Flash Tool"
+        echo " Version: $VERSION"
+        echo "================================================"
+        echo ""
+        
+        # Check esptool
+        if ! command -v esptool.py &> /dev/null; then
+            echo "[ERROR] esptool.py tidak ditemukan!"
+            echo ""
+            echo "Install dengan: pip install esptool"
+            echo ""
+            exit 1
+        fi
+        
+        # Auto-detect port
+        PORT=""
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            PORT=$(ls /dev/ttyUSB* 2>/dev/null | head -1)
+            [ -z "$PORT" ] && PORT=$(ls /dev/ttyACM* 2>/dev/null | head -1)
+        elif [[ "$OSTYPE" == "darwin"* ]]; then
+            PORT=$(ls /dev/cu.usbserial* 2>/dev/null | head -1)
+            [ -z "$PORT" ] && PORT=$(ls /dev/cu.SLAB* 2>/dev/null | head -1)
+        fi
+        
+        echo "Port yang terdeteksi:"
+        ls /dev/tty* 2>/dev/null | grep -E "(USB|ACM|cu\.)"
+        echo ""
+        
+        read -p "Masukkan port ESP32 (default: $PORT): " INPUT_PORT
+        PORT=${INPUT_PORT:-$PORT}
+        
+        if [ ! -e "$PORT" ]; then
+            echo "[ERROR] Port $PORT tidak ditemukan!"
+            exit 1
+        fi
+        
+        echo ""
+        echo "Memulai flashing ke $PORT..."
+        echo ""
+        
+        esptool.py --chip esp32 --port $PORT --baud 921600 \
+          --before default_reset --after hard_reset write_flash \
+          -z --flash_mode dio --flash_freq 40m --flash_size 4MB \
+          0x1000 bootloader.bin \
+          0x8000 partitions.bin \
+          0x10000 bootselector.bin
+        
+        if [ $? -eq 0 ]; then
+            echo ""
+            echo "================================================"
+            echo " [SUCCESS] Flash berhasil!"
+            echo "================================================"
+            echo ""
+            echo "Langkah selanjutnya:"
+            echo "1. ESP32 akan membuat WiFi AP: BootSelector"
+            echo "2. Password: 12345678"
+            echo "3. Buka browser: http://192.168.4.1"
+            echo "4. Upload firmware aplikasi Anda"
+            echo ""
+        else
+            echo ""
+            echo "[ERROR] Flash gagal! Cek koneksi ESP32 Anda."
+            echo ""
+            exit 1
+        fi
+        EOFLNX
+        
+        chmod +x BootSelector-${{ steps.version.outputs.VERSION }}/flash_linux.sh
+        
+        # Create ZIP
+        zip -r BootSelector-${{ steps.version.outputs.VERSION }}.zip BootSelector-${{ steps.version.outputs.VERSION }}/
+        
+    - name: Generate Changelog
+      id: changelog
+      run: |
+        # Get previous tag
+        PREV_TAG=$(git tag --sort=-v:refname | grep -v '${{ steps.version.outputs.VERSION }}' | head -1)
+        
+        if [ -z "$PREV_TAG" ]; then
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "Initial release" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        else
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          git log $PREV_TAG..${{ steps.version.outputs.VERSION }} --pretty=format:"- %s (%h)" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: BootSelector ${{ steps.version.outputs.VERSION }}
+        body: |
+          ## 🚀 BootSelector ESP32 - Release ${{ steps.version.outputs.VERSION }}
+          
+          **Build Date:** ${{ steps.version.outputs.DATE }}  
+          **Platform:** ESP32 (4MB Flash)
+          
+          ### 📦 Download
+          
+          Pilih salah satu:
+          - **Complete Package** (ZIP) - Semua file + script + dokumentasi
+          - **Firmware Only** - Jika sudah punya bootloader & partitions
+          
+          ### ⚡ Quick Flash
+          
+          **Windows:**
+          1. Extract ZIP
+          2. Install: `pip install esptool`
+          3. Jalankan: `flash_windows.bat`
+          
+          **Linux/Mac:**
+          1. Extract ZIP
+          2. Install: `pip install esptool`
+          3. Jalankan: `./flash_linux.sh`
+          
+          **Manual (semua OS):**
+          ```bash
+          esptool.py --chip esp32 --port YOUR_PORT --baud 921600 \
+            --before default_reset --after hard_reset write_flash \
+            -z --flash_mode dio --flash_freq 40m --flash_size 4MB \
+            0x1000 bootloader.bin \
+            0x8000 partitions.bin \
+            0x10000 bootselector.bin
+          ```
+          
+          ### 🔧 Setelah Flash
+          
+          1. **Koneksi WiFi**
+             - SSID: `BootSelector`
+             - Password: `12345678`
+          
+          2. **Akses Web UI**
+             - URL: http://192.168.4.1
+          
+          3. **Upload Aplikasi**
+             - Upload `spotwelding.bin` ke OTA_0
+             - Upload `diycharger.bin` ke OTA_1
+          
+          4. **Switch Mode**
+             - Klik tombol "Boot Spot" atau "Boot Charger"
+          
+          ### 📊 Partition Layout
+          
+          ```
+          Factory:  0x20000  (512 KB)  - BootSelector
+          OTA_0:    0xA0000  (1.25 MB) - Spot Welding
+          OTA_1:    0x1E0000 (1.25 MB) - DIY Charger
+          SPIFFS:   0x320000 (832 KB)  - File System
+          ```
+          
+          ### 📝 Changelog
+          
+          ${{ steps.changelog.outputs.CHANGELOG }}
+          
+          ### 📖 Documentation
+          
+          Full documentation: [README.md](https://github.com/${{ github.repository }})
+          
+          ### 🐛 Issues
+          
+          Report bugs: [GitHub Issues](https://github.com/${{ github.repository }}/issues)
+          
+          ---
+          
+          **SHA256 Checksums:**
+          ```
+          $(cd BootSelector-${{ steps.version.outputs.VERSION }} && sha256sum *.bin)
+          ```
+        files: |
+          BootSelector-${{ steps.version.outputs.VERSION }}.zip
+          BootSelector-${{ steps.version.outputs.VERSION }}/bootselector.bin
+          BootSelector-${{ steps.version.outputs.VERSION }}/bootloader.bin
+          BootSelector-${{ steps.version.outputs.VERSION }}/partitions.bin
+          BootSelector-${{ steps.version.outputs.VERSION }}/BUILD_INFO.txt
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
