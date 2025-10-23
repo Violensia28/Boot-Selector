@@ -1,3 +1,8 @@
+![Build](https://github.com/Violensia28/BootSelector-ESP32/workflows/Build%20BootSelector%20ESP32/badge.svg)
+![Release](https://github.com/Violensia28/BootSelector-ESP32/workflows/Release%20BootSelector/badge.svg)
+![License](https://img.shields.io/github/license/Violensia28/BootSelector-ESP32)
+![Release](https://img.shields.io/github/v/release/Violensia28/BootSelector-ESP32)
+
 # BootSelector ESP32
 
 **Dual-boot manager untuk ESP32 (4MB Flash)** - Mengelola dua aplikasi independen: **Spot Welding** dan **DIY Charger** dalam satu perangkat.
