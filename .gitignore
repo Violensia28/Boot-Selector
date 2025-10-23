@@ -1,0 +1,53 @@
+# PlatformIO
+.pio/
+.vscode/
+.pioenvs/
+.piolibdeps/
+lib/
+.clang_complete
+.gcc-flags.json
+
+# Build artifacts
+*.bin
+*.elf
+*.map
+*.hex
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+*.egg-info/
+*.egg
+
+# Logs
+*.log
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.cache
+
+# Environment
+.env
+.env.local
