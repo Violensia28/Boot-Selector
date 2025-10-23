@@ -9,6 +9,7 @@ lib/
 
 # Build artifacts
 *.bin
+!partitions.csv
 *.elf
 *.map
 *.hex
