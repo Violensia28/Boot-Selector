@@ -1,7 +1,7 @@
-![Build](https://github.com/Violensia28/BootSelector-ESP32/workflows/Build%20BootSelector%20ESP32/badge.svg)
-![Release](https://github.com/Violensia28/BootSelector-ESP32/workflows/Release%20BootSelector/badge.svg)
-![License](https://img.shields.io/github/license/Violensia28/BootSelector-ESP32)
-![Release](https://img.shields.io/github/v/release/Violensia28/BootSelector-ESP32)
+![Build](https://github.com/Violensia28/Boot-Selector/workflows/Build%20BootSelector%20ESP32/badge.svg)
+![Release](https://github.com/Violensia28/Boot-Selector/workflows/Release%20BootSelector/badge.svg)
+![License](https://github.com/Violensia28/Boot-Selector)
+![Release](https://img.shields.io/github/v/release/Violensia28/Boot-Selector)
 
 # BootSelector ESP32
 
