@@ -55,15 +55,15 @@ button:hover,a.button:hover{background:#0f9c77;transform:translateY(-2px)}
 </head>
 <body>
 <div class="container">
-<h1>🔧 BootSelector ESP32</h1>
+<h1>ðŸ”§ BootSelector ESP32</h1>
 
 <div class="card">
-<h2>📊 Info Partisi</h2>
+<h2>ðŸ“Š Info Partisi</h2>
 <pre id="info">Loading...</pre>
 </div>
 
 <div class="card">
-<h2>⚡ Upload Spot Welding (ota_0)</h2>
+<h2>âš¡ Upload Spot Welding (ota_0)</h2>
 <form class="upload-form" id="form-spot">
 <input type="file" id="file-spot" accept=".bin" required>
 <button type="submit">Upload ke OTA_0</button>
@@ -73,7 +73,7 @@ button:hover,a.button:hover{background:#0f9c77;transform:translateY(-2px)}
 </div>
 
 <div class="card">
-<h2>🔋 Upload DIY Charger (ota_1)</h2>
+<h2>ðŸ”‹ Upload DIY Charger (ota_1)</h2>
 <form class="upload-form" id="form-charger">
 <input type="file" id="file-charger" accept=".bin" required>
 <button type="submit">Upload ke OTA_1</button>
@@ -83,7 +83,7 @@ button:hover,a.button:hover{background:#0f9c77;transform:translateY(-2px)}
 </div>
 
 <div class="card">
-<h2>🚀 Boot Selector</h2>
+<h2>ðŸš€ Boot Selector</h2>
 <a href="/spot" class="button boot-btn" onclick="return confirm('Boot ke Spot Welding?')">Boot Spot Welding</a>
 <a href="/charger" class="button boot-btn" onclick="return confirm('Boot ke DIY Charger?')">Boot DIY Charger</a>
 </div>
@@ -118,18 +118,18 @@ prog.style.display='none';
 status.style.display='block';
 if(xhr.status===200){
 status.className='status success';
-status.textContent='✅ Upload berhasil!';
+status.textContent='âœ… Upload berhasil!';
 setTimeout(()=>location.reload(),2000);
 }else{
 status.className='status error';
-status.textContent='❌ Upload gagal: '+xhr.responseText;
+status.textContent='âŒ Upload gagal: '+xhr.responseText;
 }
 };
 xhr.onerror=()=>{
 prog.style.display='none';
 status.style.display='block';
 status.className='status error';
-status.textContent='❌ Koneksi error';
+status.textContent='âŒ Koneksi error';
 };
 xhr.open('POST',endpoint);
 const fd=new FormData();
@@ -157,7 +157,7 @@ void setupSafeGPIO() {
 // Get partition info sebagai string
 String getPartitionInfo() {
   String info = "";
-  
+
   const esp_partition_t* factory = esp_partition_find_first(
     ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
   const esp_partition_t* ota0 = esp_partition_find_first(
@@ -167,21 +167,21 @@ String getPartitionInfo() {
   const esp_partition_t* spiffs = esp_partition_find_first(
     ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_SPIFFS, NULL);
   const esp_partition_t* running = esp_ota_get_running_partition();
-  
+
   if (factory) {
-    info += "Factory: 0x" + String(factory->address, HEX) + 
+    info += "Factory: 0x" + String(factory->address, HEX) +
             " (" + String(factory->size) + " bytes)\n";
   }
   if (ota0) {
-    info += "OTA_0 (Spot): 0x" + String(ota0->address, HEX) + 
+    info += "OTA_0 (Spot): 0x" + String(ota0->address, HEX) +
             " (" + String(ota0->size) + " bytes)\n";
   }
   if (ota1) {
-    info += "OTA_1 (Charger): 0x" + String(ota1->address, HEX) + 
+    info += "OTA_1 (Charger): 0x" + String(ota1->address, HEX) +
             " (" + String(ota1->size) + " bytes)\n";
   }
   if (spiffs) {
-    info += "SPIFFS: 0x" + String(spiffs->address, HEX) + 
+    info += "SPIFFS: 0x" + String(spiffs->address, HEX) +
             " (" + String(spiffs->size) + " bytes)\n";
   }
   if (running) {
@@ -197,7 +197,7 @@ String getPartitionInfo() {
     }
     info += " (0x" + String(running->address, HEX) + ")";
   }
-  
+
   return info;
 }
 
@@ -216,19 +216,19 @@ void handleBootSpot() {
   Serial.println("[BOOT] Switching to ota_0 (Spot Welding)...");
   const esp_partition_t* ota0 = esp_partition_find_first(
     ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_0, NULL);
-  
+
   if (ota0 == NULL) {
     server.send(404, "text/plain", "OTA_0 partition not found");
     return;
   }
-  
+
   esp_err_t err = esp_ota_set_boot_partition(ota0);
   if (err != ESP_OK) {
     server.send(500, "text/plain", "Failed to set boot partition: " + String(err));
     return;
   }
-  
-  server.send(200, "text/html", 
+
+  server.send(200, "text/html",
     "<html><body><h2>Rebooting to Spot Welding...</h2></body></html>");
   delay(1000);
   ESP.restart();
@@ -239,19 +239,19 @@ void handleBootCharger() {
   Serial.println("[BOOT] Switching to ota_1 (DIY Charger)...");
   const esp_partition_t* ota1 = esp_partition_find_first(
     ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_1, NULL);
-  
+
   if (ota1 == NULL) {
     server.send(404, "text/plain", "OTA_1 partition not found");
     return;
   }
-  
+
   esp_err_t err = esp_ota_set_boot_partition(ota1);
   if (err != ESP_OK) {
     server.send(500, "text/plain", "Failed to set boot partition: " + String(err));
     return;
   }
-  
-  server.send(200, "text/html", 
+
+  server.send(200, "text/html",
     "<html><body><h2>Rebooting to DIY Charger...</h2></body></html>");
   delay(1000);
   ESP.restart();
@@ -260,22 +260,22 @@ void handleBootCharger() {
 // Handler: upload OTA ke slot spesifik
 void handleOTAUpload(esp_partition_subtype_t target_subtype, const char* name) {
   HTTPUpload& upload = server.upload();
-  
+
   if (upload.status == UPLOAD_FILE_START) {
     Serial.printf("[OTA] Upload Start: %s to %s\n", upload.filename.c_str(), name);
-    
+
     // Cari partisi target
     update_partition = esp_partition_find_first(
       ESP_PARTITION_TYPE_APP, target_subtype, NULL);
-    
+
     if (update_partition == NULL) {
       Serial.println("[OTA] Target partition not found!");
       return;
     }
-    
-    Serial.printf("[OTA] Target: 0x%x, size: %d\n", 
+
+    Serial.printf("[OTA] Target: 0x%x, size: %d\n",
       update_partition->address, update_partition->size);
-    
+
     // Mulai OTA
     esp_err_t err = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &ota_handle);
     if (err != ESP_OK) {
@@ -284,10 +284,10 @@ void handleOTAUpload(esp_partition_subtype_t target_subtype, const char* name) {
       return;
     }
     ota_in_progress = true;
-    
+
   } else if (upload.status == UPLOAD_FILE_WRITE) {
     if (update_partition == NULL || !ota_in_progress) return;
-    
+
     // Tulis data
     esp_err_t err = esp_ota_write(ota_handle, upload.buf, upload.currentSize);
     if (err != ESP_OK) {
@@ -298,13 +298,13 @@ void handleOTAUpload(esp_partition_subtype_t target_subtype, const char* name) {
       return;
     }
     Serial.printf("[OTA] Written: %d bytes\n", upload.totalSize);
-    
+
   } else if (upload.status == UPLOAD_FILE_END) {
     if (update_partition == NULL || !ota_in_progress) {
       server.send(500, "text/plain", "Upload failed - no active session");
       return;
     }
-    
+
     // Selesaikan OTA
     esp_err_t err = esp_ota_end(ota_handle);
     if (err != ESP_OK) {
@@ -314,10 +314,10 @@ void handleOTAUpload(esp_partition_subtype_t target_subtype, const char* name) {
       Serial.printf("[OTA] Success! Total: %d bytes\n", upload.totalSize);
       server.send(200, "text/plain", "Upload OK - " + String(upload.totalSize) + " bytes");
     }
-    
+
     ota_in_progress = false;
     update_partition = NULL;
-    
+
   } else if (upload.status == UPLOAD_FILE_ABORTED) {
     if (ota_in_progress) {
       esp_ota_abort(ota_handle);
@@ -341,40 +341,40 @@ void handleUploadCharger() {
 void setup() {
   Serial.begin(115200);
   delay(500);
-  
+
   Serial.println("\n\n========================================");
   Serial.println("   BootSelector ESP32 v1.0");
   Serial.println("========================================\n");
-  
+
   // Safety first!
   setupSafeGPIO();
-  
+
   // Print partition info
   Serial.println(getPartitionInfo());
   Serial.println();
-  
+
   // Setup SoftAP
   Serial.println("[WiFi] Starting Access Point...");
   Serial.printf("SSID: %s\n", BOOTSEL_AP_SSID);
   Serial.printf("Pass: %s\n", BOOTSEL_AP_PASS);
-  
+
   WiFi.softAP(BOOTSEL_AP_SSID, BOOTSEL_AP_PASS);
   IPAddress IP = WiFi.softAPIP();
   Serial.print("[WiFi] AP IP: ");
   Serial.println(IP);
-  
+
   // Setup web server
   server.on("/", handleRoot);
   server.on("/info", handleInfo);
   server.on("/spot", handleBootSpot);
   server.on("/charger", handleBootCharger);
-  server.on("/upload/spot", HTTP_POST, 
-    []() { server.send(200); }, 
+  server.on("/upload/spot", HTTP_POST,
+    []() { server.send(200); },
     handleUploadSpot);
-  server.on("/upload/charger", HTTP_POST, 
-    []() { server.send(200); }, 
+  server.on("/upload/charger", HTTP_POST,
+    []() { server.send(200); },
     handleUploadCharger);
-  
+
   server.begin();
   Serial.println("[HTTP] Server started on port 80");
   Serial.println("\nReady! Connect to AP and open http://192.168.4.1\n");
@@ -384,4 +384,3 @@ void loop() {
   server.handleClient();
   delay(2);
 }
-
